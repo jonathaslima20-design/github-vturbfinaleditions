@@ -28,6 +28,8 @@ interface ReferralSettings {
   commission_anual: number;
   minimum_withdrawal_amount: number;
   is_active: boolean;
+  share_message_whatsapp: string;
+  share_message_telegram: string;
 }
 
 interface Commission {
@@ -156,6 +158,8 @@ export default function ReferralManagementPage() {
           commission_anual: settings.commission_anual,
           minimum_withdrawal_amount: settings.minimum_withdrawal_amount,
           is_active: settings.is_active,
+          share_message_whatsapp: settings.share_message_whatsapp,
+          share_message_telegram: settings.share_message_telegram,
           updated_at: new Date().toISOString(),
         })
         .eq('id', settings.id);
@@ -292,6 +296,35 @@ export default function ReferralManagementPage() {
                       value={settings.minimum_withdrawal_amount}
                       onChange={(e) => setSettings({ ...settings, minimum_withdrawal_amount: parseFloat(e.target.value) || 0 })}
                     />
+                  </div>
+
+                  <div className="border-t pt-6 space-y-4">
+                    <div>
+                      <Label className="text-base font-medium">Mensagens de Compartilhamento</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Personalize as mensagens enviadas quando os usuarios compartilham o link de indicacao. Use <code className="bg-muted px-1 py-0.5 rounded text-xs">{'{link}'}</code> para inserir o link automaticamente.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Mensagem para WhatsApp</Label>
+                      <Textarea
+                        value={settings.share_message_whatsapp}
+                        onChange={(e) => setSettings({ ...settings, share_message_whatsapp: e.target.value })}
+                        placeholder="Ex: Crie sua vitrine online no VitrineTurbo! Cadastre-se aqui: {link}"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Mensagem para Telegram</Label>
+                      <Textarea
+                        value={settings.share_message_telegram}
+                        onChange={(e) => setSettings({ ...settings, share_message_telegram: e.target.value })}
+                        placeholder="Ex: Crie sua vitrine online no VitrineTurbo! Cadastre-se aqui: {link}"
+                        rows={3}
+                      />
+                    </div>
                   </div>
 
                   <Button onClick={handleSaveSettings} disabled={saving}>

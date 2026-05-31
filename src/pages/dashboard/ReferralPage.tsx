@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReferralData } from '@/hooks/useReferralData';
@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import PixKeyDialog from '@/components/referral/PixKeyDialog';
 import WithdrawalDialog from '@/components/referral/WithdrawalDialog';
 import { useSubscriptionModal } from '@/contexts/SubscriptionModalContext';
+import { supabase } from '@/lib/supabase';
 
 function PremiumLockOverlay({ onUpgrade }: { onUpgrade: () => void }) {
   return (
@@ -69,8 +70,31 @@ export default function ReferralPage() {
   const [showPixDialog, setShowPixDialog] = useState(false);
   const [showWithdrawalDialog, setShowWithdrawalDialog] = useState(false);
   const { openModal } = useSubscriptionModal();
+  const [shareMessages, setShareMessages] = useState({ whatsapp: '', telegram: '' });
 
   const isFreePlan = user?.plan_status === 'free' || user?.plan_status === 'expired';
+
+  useEffect(() => {
+    supabase
+      .from('referral_settings')
+      .select('share_message_whatsapp, share_message_telegram')
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setShareMessages({
+            whatsapp: data.share_message_whatsapp || '',
+            telegram: data.share_message_telegram || '',
+          });
+        }
+      });
+  }, []);
+
+  const buildShareText = (template: string) => {
+    const fallback = `Crie sua vitrine online no VitrineTurbo! Cadastre-se aqui: ${referralLink}`;
+    if (!template) return fallback;
+    return template.replace(/\{link\}/g, referralLink);
+  };
 
   const copyToClipboard = async () => {
     if (isFreePlan) {
@@ -102,7 +126,7 @@ export default function ReferralPage() {
       });
       return;
     }
-    const text = encodeURIComponent(`Crie sua vitrine online no VitrineTurbo! Cadastre-se aqui: ${referralLink}`);
+    const text = encodeURIComponent(buildShareText(shareMessages.whatsapp));
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
@@ -117,7 +141,7 @@ export default function ReferralPage() {
       });
       return;
     }
-    const text = encodeURIComponent(`Crie sua vitrine online no VitrineTurbo! Cadastre-se aqui: ${referralLink}`);
+    const text = encodeURIComponent(buildShareText(shareMessages.telegram));
     window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${text}`, '_blank');
   };
 
