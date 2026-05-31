@@ -173,6 +173,15 @@ export function HeroScreenEditor({ screen, isNew, onSave, onCancel }: Props) {
                 />
                 <p className="text-xs text-gray-400">Deixe em branco para usar a URL automática baseada no tipo de tela.</p>
               </div>
+              <div className="space-y-1.5">
+                <Label>Hora no relógio</Label>
+                <Input
+                  value={config.clock_time || ''}
+                  onChange={(e) => updateConfig('clock_time', e.target.value)}
+                  placeholder="9:41"
+                />
+                <p className="text-xs text-gray-400">Formato livre. Ex: 9:41, 14:30. Deixe em branco para usar 9:41.</p>
+              </div>
             </CardContent>
           </Card>
 

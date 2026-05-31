@@ -55,7 +55,7 @@ export function MockupRenderer({ screenType, config, scrollY = 0 }: MockupRender
           transform: `scale(${scale})`,
         }}
       >
-        <StatusBar />
+        <StatusBar clockTime={config.clock_time} />
         <BrowserBar screenType={screenType} config={config} />
 
         <div
@@ -105,7 +105,7 @@ function MockupScrollIndicator({ scrollY, maxScroll }: { scrollY: number; maxScr
   );
 }
 
-function StatusBar() {
+function StatusBar({ clockTime = '9:41' }: { clockTime?: string }) {
   return (
     <div
       className="absolute top-0 left-0 right-0"
@@ -122,7 +122,7 @@ function StatusBar() {
         className="absolute text-[15px] font-semibold tracking-tight"
         style={{ left: 28, bottom: 10, color: '#fff' }}
       >
-        9:41
+        {clockTime || '9:41'}
       </span>
 
       {/* Right indicators */}
