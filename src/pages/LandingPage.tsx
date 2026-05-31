@@ -239,19 +239,12 @@ function Hero({ refCode }: { refCode: string | null }) {
               <ArrowRight size={16} />
             </a>
           </div>
-          <div className="flex flex-wrap items-center gap-6 mt-10">
-            {[
-              { label: '+3.000 lojas ativas' },
-              { label: '0% taxa sobre vendas' },
-              { label: 'Suporte Humanizado' },
-              { label: 'Plano gratuito disponível' },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-                  <Check size={10} strokeWidth={3} className="text-primary" />
-                </div>
-                <span className="text-[13px] text-ink-600 font-medium">{item.label}</span>
-              </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-10">
+            {['+3.000 lojas ativas', '0% taxa sobre vendas', 'Suporte Humanizado', 'Plano gratuito disponível'].map((label, i, arr) => (
+              <span key={label} className="flex items-center gap-x-3">
+                <span className="font-mono-label uppercase text-[11px] text-ink-500">{label}</span>
+                {i < arr.length - 1 && <span className="text-ink-300 select-none">·</span>}
+              </span>
             ))}
           </div>
         </div>
