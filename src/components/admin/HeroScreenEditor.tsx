@@ -12,6 +12,7 @@ import { ArrowLeft, Upload, X, Plus, RotateCcw } from 'lucide-react';
 import { MockupRenderer } from '@/components/landing/mockups/MockupRenderer';
 import { getMaxScrollForScreenType } from '@/components/landing/mockups/mockupScrollUtils';
 import { FONT_OPTIONS, HEADING_FONT_OPTIONS, loadGoogleFont } from '@/lib/appearanceDefaults';
+import { ImageCropperCover } from '@/components/ui/image-cropper-cover';
 import { cn } from '@/lib/utils';
 import type { HeroScreen } from '@/hooks/useLandingHeroScreens';
 
@@ -22,6 +23,10 @@ interface Props {
   onCancel: () => void;
 }
 
+const CROP_ASPECT_RATIOS: Record<string, number> = {
+  cover_url: 960 / 860,
+};
+
 export function HeroScreenEditor({ screen, isNew, onSave, onCancel }: Props) {
   const [label, setLabel] = useState(screen.label);
   const [screenType] = useState(screen.screen_type);
@@ -30,9 +35,35 @@ export function HeroScreenEditor({ screen, isNew, onSave, onCancel }: Props) {
   const [scrollY, setScrollY] = useState(screen.scroll_y || 0);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [cropImage, setCropImage] = useState<string | null>(null);
+  const [cropField, setCropField] = useState<string | null>(null);
 
   const updateConfig = (key: string, value: any) => {
     setConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleImageSelect = (field: string, file: File) => {
+    if (CROP_ASPECT_RATIOS[field]) {
+      const objectUrl = URL.createObjectURL(file);
+      setCropImage(objectUrl);
+      setCropField(field);
+    } else {
+      handleImageUpload(field, file);
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    const field = cropField!;
+    setCropImage(null);
+    setCropField(null);
+    const file = new File([croppedBlob], 'cover.jpg', { type: 'image/jpeg' });
+    await handleImageUpload(field, file);
+  };
+
+  const handleCropCancel = () => {
+    if (cropImage) URL.revokeObjectURL(cropImage);
+    setCropImage(null);
+    setCropField(null);
   };
 
   const handleImageUpload = async (field: string, file: File) => {
@@ -147,7 +178,7 @@ export function HeroScreenEditor({ screen, isNew, onSave, onCancel }: Props) {
 
           {/* Type-specific editor */}
           {screenType === 'storefront' && (
-            <StorefrontEditor config={config} updateConfig={updateConfig} onImageUpload={handleImageUpload} onProductImageUpload={handleProductImageUpload} uploading={uploading} />
+            <StorefrontEditor config={config} updateConfig={updateConfig} onImageUpload={handleImageSelect} onProductImageUpload={handleProductImageUpload} uploading={uploading} />
           )}
           {screenType === 'product_detail' && (
             <ProductDetailEditor
@@ -219,6 +250,16 @@ export function HeroScreenEditor({ screen, isNew, onSave, onCancel }: Props) {
           </Card>
         </div>
       </div>
+
+      {cropImage && cropField && (
+        <ImageCropperCover
+          image={cropImage}
+          aspectRatio={CROP_ASPECT_RATIOS[cropField]}
+          onCrop={handleCropComplete}
+          onCancel={handleCropCancel}
+          open={true}
+        />
+      )}
     </div>
   );
 }
