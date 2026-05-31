@@ -244,7 +244,7 @@ function Hero({ refCode }: { refCode: string | null }) {
               { label: '+3.000 lojas ativas', icon: Users },
               { label: '0% taxas em vendas', icon: Percent },
               { label: 'Suporte Humanizado', icon: MessageCircle },
-              { label: 'Plano free disponível', icon: Gift },
+              { label: 'Plano free inicial', icon: Gift },
             ].map(({ label, icon: Icon }) => (
               <div key={label} className="inline-flex items-center gap-1.5 border hairline bg-white rounded-full px-3 py-1.5">
                 <Icon size={11} className="text-ink-400" strokeWidth={2} />
