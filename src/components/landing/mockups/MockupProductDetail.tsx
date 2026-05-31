@@ -50,6 +50,43 @@ export function MockupProductDetail({ config }: { config: ProductDetailConfig })
 
         {/* Main content section */}
         <section className="px-4">
+          {/* Badges row */}
+          <div className="flex gap-2 mb-3">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+              Categoria
+            </span>
+            {hasDiscount && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-600 text-white">
+                {config.discount_badge || `-${Math.round(((config.price! - config.discount_price!) / config.price!) * 100)}% OFF`}
+              </span>
+            )}
+          </div>
+
+          {/* Title */}
+          <h1 className="text-2xl font-bold text-gray-900">
+            {config.product_title || 'Nome do Produto'}
+          </h1>
+
+          {/* Price section */}
+          <div className="mt-6 mb-8">
+            {hasDiscount ? (
+              <div className="space-y-2">
+                <div className="text-lg text-gray-400 line-through">
+                  R$ {(config.price || 0).toFixed(2).replace('.', ',')}
+                </div>
+                <div className="text-3xl font-bold text-gray-900">
+                  R$ {config.discount_price!.toFixed(2).replace('.', ',')}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="text-3xl font-bold text-gray-900">
+                  R$ {(config.price || 0).toFixed(2).replace('.', ',')}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Image Gallery */}
           <div className="mb-8">
             <div className="aspect-square overflow-hidden rounded-lg relative bg-gray-100">
@@ -65,8 +102,8 @@ export function MockupProductDetail({ config }: { config: ProductDetailConfig })
                 </div>
               )}
 
-              {/* Discount badge */}
-              {config.discount_badge && (
+              {/* Discount badge on image */}
+              {hasDiscount && config.discount_badge && (
                 <div className="absolute top-3 left-3">
                   <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-md font-bold">
                     {config.discount_badge}
@@ -95,53 +132,6 @@ export function MockupProductDetail({ config }: { config: ProductDetailConfig })
                 );
               })}
             </div>
-          </div>
-
-          {/* Badges row */}
-          <div className="flex gap-2 mb-3">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-              Categoria
-            </span>
-            {hasDiscount && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-600 text-white">
-                {config.discount_badge || `-${Math.round(((config.price! - config.discount_price!) / config.price!) * 100)}% OFF`}
-              </span>
-            )}
-          </div>
-
-          {/* Title */}
-          <h1 className="text-2xl font-bold text-gray-900">
-            {config.product_title || 'Nome do Produto'}
-          </h1>
-
-          {/* Price section */}
-          <div className="mt-6 mb-8">
-            {hasDiscount ? (
-              <div className="space-y-2">
-                <div className="text-lg text-gray-400 line-through">
-                  R$ {(config.price || 0).toFixed(2).replace('.', ',')}
-                </div>
-                <div className="text-3xl font-bold text-gray-900">
-                  R$ {config.discount_price!.toFixed(2).replace('.', ',')}
-                </div>
-                {config.product_description && (
-                  <div className="text-sm text-green-600 font-medium">
-                    {config.product_description}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="text-3xl font-bold text-gray-900">
-                  R$ {(config.price || 0).toFixed(2).replace('.', ',')}
-                </div>
-                {config.product_description && (
-                  <div className="text-sm text-green-600 font-medium">
-                    {config.product_description}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Color selector */}
@@ -186,6 +176,30 @@ export function MockupProductDetail({ config }: { config: ProductDetailConfig })
             </div>
           )}
 
+          {/* CTA Button */}
+          <div className="mt-8">
+            <div
+              className="w-full h-11 rounded-md flex items-center justify-center text-sm font-medium text-white"
+              style={{ backgroundColor: buttonColor }}
+            >
+              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+                <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
+              </svg>
+              {config.button_text || 'Adicionar ao Carrinho'}
+            </div>
+          </div>
+
+          {/* Description section */}
+          {config.product_description && (
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">Descrição</h2>
+              <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">
+                {config.product_description}
+              </p>
+            </div>
+          )}
+
           {/* Seller info */}
           {config.seller_name && (
             <div className="flex items-center gap-3 mt-6 pt-4 border-t border-gray-100">
@@ -204,20 +218,6 @@ export function MockupProductDetail({ config }: { config: ProductDetailConfig })
               </div>
             </div>
           )}
-
-          {/* CTA Button */}
-          <div className="mt-8">
-            <div
-              className="w-full h-11 rounded-md flex items-center justify-center text-sm font-medium text-white"
-              style={{ backgroundColor: buttonColor }}
-            >
-              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
-                <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
-              </svg>
-              {config.button_text || 'Adicionar ao Carrinho'}
-            </div>
-          </div>
         </section>
       </div>
     </div>
