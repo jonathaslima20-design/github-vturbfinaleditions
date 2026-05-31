@@ -650,7 +650,7 @@ function ProFeaturesSection({ refCode }: { refCode: string | null }) {
   );
 }
 
-function DifferentiationSection() {
+function DifferentiationSection({ refCode }: { refCode: string | null }) {
   const features = [
     'Sem taxa sobre vendas — pague apenas o plano',
     'Estoque automatizado com alertas de nível baixo',
@@ -1145,7 +1145,7 @@ export default function LandingPage() {
       <Hero refCode={refCode} />
       <BentoGrid />
       <ProFeaturesSection refCode={refCode} />
-      <DifferentiationSection />
+      <DifferentiationSection refCode={refCode} />
       <AnalyticsSection />
       <SocialProofSection />
       <PricingSection refCode={refCode} />
