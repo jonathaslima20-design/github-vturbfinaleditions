@@ -73,74 +73,73 @@ function CounterCard() {
   );
 }
 
-const SPEED_PX_PER_SEC = 50;
-
 export default function LandingSocialProof() {
   const [clients, setClients] = useState<BannerClient[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [halfWidth, setHalfWidth] = useState(0);
 
   const trackRef = useRef<HTMLDivElement>(null);
-  const sectionRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
-  const isVisibleRef = useRef(false);
-  const isHoveredRef = useRef(false);
+  const isPausedRef = useRef(false);
   const offsetRef = useRef(0);
   const lastTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('banner_clients')
-          .select('id, corretor_page_url, business_name, avatar_url, display_order')
-          .eq('is_active', true)
-          .order('display_order', { ascending: true });
-
-        if (error) throw error;
-        setClients(data || []);
-      } catch (error) {
-        console.error('Error fetching banner clients:', error);
-      } finally {
+    supabase
+      .from('banner_clients')
+      .select('id, corretor_page_url, business_name, avatar_url, display_order')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true })
+      .then(({ data, error }) => {
+        if (!error) setClients(data || []);
         setLoaded(true);
+      });
+  }, []);
+
+  // Measure the natural half-width after render
+  useEffect(() => {
+    if (!loaded || !trackRef.current || clients.length === 0) return;
+
+    const measure = () => {
+      if (trackRef.current) {
+        const half = trackRef.current.scrollWidth / 2;
+        if (half > 0) setHalfWidth(half);
       }
     };
 
-    fetchClients();
-  }, []);
+    // Use ResizeObserver to re-measure if layout changes
+    const ro = new ResizeObserver(measure);
+    ro.observe(trackRef.current);
+    measure();
 
-  useEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => { isVisibleRef.current = entry.isIntersecting; },
-      { threshold: 0.05 }
-    );
-    observer.observe(section);
-    return () => observer.disconnect();
-  }, []);
+    return () => ro.disconnect();
+  }, [loaded, clients.length]);
 
+  // RAF-based scroll animation
   useEffect(() => {
-    const track = trackRef.current;
-    if (!loaded || !track || clients.length === 0) return;
+    if (halfWidth === 0) return;
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
+
+    const SPEED = 50; // px per second
 
     const step = (timestamp: number) => {
       if (lastTimeRef.current === null) {
         lastTimeRef.current = timestamp;
       }
 
-      if (isVisibleRef.current && !isHoveredRef.current) {
+      if (!isPausedRef.current) {
         const delta = (timestamp - lastTimeRef.current) / 1000;
-        offsetRef.current += SPEED_PX_PER_SEC * delta;
+        offsetRef.current += SPEED * delta;
 
-        const half = track.scrollWidth / 2;
-        if (offsetRef.current >= half) {
-          offsetRef.current -= half;
+        if (offsetRef.current >= halfWidth) {
+          offsetRef.current -= halfWidth;
         }
 
-        track.style.transform = `translateX(${-offsetRef.current}px)`;
+        if (trackRef.current) {
+          trackRef.current.style.transform = `translateX(${-offsetRef.current}px)`;
+        }
       }
 
       lastTimeRef.current = timestamp;
@@ -150,11 +149,10 @@ export default function LandingSocialProof() {
     rafRef.current = requestAnimationFrame(step);
 
     return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-      }
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      lastTimeRef.current = null;
     };
-  }, [loaded, clients.length]);
+  }, [halfWidth]);
 
   if (!loaded || clients.length === 0) return null;
 
@@ -162,15 +160,17 @@ export default function LandingSocialProof() {
   const duplicated = [...itemsWithCounter, ...itemsWithCounter];
 
   return (
-    <div ref={sectionRef} className="mt-14 rounded-2xl border hairline bg-surface py-10 overflow-hidden">
+    <div className="mt-14 rounded-2xl border hairline bg-surface py-10 overflow-hidden">
       <div
         className="relative overflow-hidden"
         style={{
           maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
           WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
         }}
-        onMouseEnter={() => { isHoveredRef.current = true; }}
-        onMouseLeave={() => { isHoveredRef.current = false; }}
+        onMouseEnter={() => { isPausedRef.current = true; }}
+        onMouseLeave={() => { isPausedRef.current = false; lastTimeRef.current = null; }}
+        onTouchStart={() => { isPausedRef.current = true; }}
+        onTouchEnd={() => { isPausedRef.current = false; lastTimeRef.current = null; }}
       >
         <div
           ref={trackRef}
