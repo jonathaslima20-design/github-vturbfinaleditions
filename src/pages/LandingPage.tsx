@@ -239,7 +239,7 @@ function Hero({ refCode }: { refCode: string | null }) {
               <ArrowRight size={16} />
             </a>
           </div>
-          <div className="flex flex-wrap items-center gap-2 mt-10">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 mt-10">
             {[
               { label: '+3.000 lojas ativas', icon: Users },
               { label: '0% taxa sobre vendas', icon: Percent },
