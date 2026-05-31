@@ -242,9 +242,9 @@ function Hero({ refCode }: { refCode: string | null }) {
           <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 mt-10">
             {[
               { label: '+3.000 lojas ativas', icon: Users },
-              { label: '0% taxa sobre vendas', icon: Percent },
+              { label: '0% taxas em vendas', icon: Percent },
               { label: 'Suporte Humanizado', icon: MessageCircle },
-              { label: 'Plano gratuito disponível', icon: Gift },
+              { label: 'Plano free disponível', icon: Gift },
             ].map(({ label, icon: Icon }) => (
               <div key={label} className="inline-flex items-center gap-1.5 border hairline bg-white rounded-full px-3 py-1.5">
                 <Icon size={11} className="text-ink-400" strokeWidth={2} />
