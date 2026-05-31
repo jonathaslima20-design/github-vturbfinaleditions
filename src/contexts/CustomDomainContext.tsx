@@ -56,10 +56,15 @@ export function CustomDomainProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    resolveCustomDomain(hostname, cacheKey);
+    // Safety timeout: if resolution takes longer than 5s, fall through as non-custom domain
+    const timeout = setTimeout(() => {
+      setState({ isCustomDomain: false, userId: null, slug: null, domain: null, loading: false });
+    }, 5000);
+
+    resolveCustomDomain(hostname, cacheKey).finally(() => clearTimeout(timeout));
   }, []);
 
-  const resolveCustomDomain = async (hostname: string, cacheKey: string) => {
+  const resolveCustomDomain = async (hostname: string, cacheKey: string): Promise<void> => {
     try {
       const { data: domainRecord } = await supabase
         .from('custom_domains')

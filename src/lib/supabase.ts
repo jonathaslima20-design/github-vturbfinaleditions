@@ -5,7 +5,9 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
 // Enhanced validation for environment variables
-if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'undefined' || supabaseAnonKey === 'undefined') {
+const isMisconfigured = !supabaseUrl || !supabaseAnonKey || supabaseUrl === 'undefined' || supabaseAnonKey === 'undefined';
+
+if (isMisconfigured) {
   console.error('❌ SUPABASE CONFIGURATION ERROR:', {
     hasUrl: !!supabaseUrl,
     hasKey: !!supabaseAnonKey,
@@ -14,34 +16,21 @@ if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'undefined' || supabaseA
     environment: import.meta.env.MODE,
     allEnvVars: Object.keys(import.meta.env).filter(key => key.startsWith('VITE_'))
   });
-  
-  throw new Error(
-    `❌ ERRO DE CONFIGURAÇÃO: Variáveis de ambiente do Supabase não encontradas ou inválidas.
-    
-    Verifique se as seguintes variáveis estão configuradas corretamente:
-    - VITE_SUPABASE_URL: ${supabaseUrl ? 'Configurada' : 'NÃO ENCONTRADA'}
-    - VITE_SUPABASE_ANON_KEY: ${supabaseAnonKey ? 'Configurada' : 'NÃO ENCONTRADA'}
-    
-    Ambiente atual: ${import.meta.env.MODE}
-    
-    Para resolver:
-    1. Verifique se as variáveis estão no arquivo .env correto
-    2. Certifique-se de que começam com VITE_
-    3. Reinicie o servidor de desenvolvimento
-    4. Em produção, configure as variáveis no painel de hospedagem`
-  );
 }
 
 // Log successful configuration (only in development)
-if (import.meta.env.DEV) {
+if (!isMisconfigured && import.meta.env.DEV) {
   console.log('✅ SUPABASE CONFIGURED:', {
-    url: `${supabaseUrl.substring(0, 30)}...`,
-    keyLength: supabaseAnonKey.length,
+    url: `${supabaseUrl!.substring(0, 30)}...`,
+    keyLength: supabaseAnonKey!.length,
     environment: import.meta.env.MODE
   });
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+const FALLBACK_URL = 'https://placeholder.supabase.co';
+const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDAwMDAwMDAsImV4cCI6MjAwMDAwMDAwMH0.placeholder';
+
+export const supabase = createClient(supabaseUrl || FALLBACK_URL, supabaseAnonKey || FALLBACK_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
