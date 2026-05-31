@@ -73,14 +73,19 @@ function CounterCard() {
   );
 }
 
+const SPEED_PX_PER_SEC = 50;
+
 export default function LandingSocialProof() {
   const [clients, setClients] = useState<BannerClient[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const isVisibleRef = useRef(false);
+  const isHoveredRef = useRef(false);
+  const offsetRef = useRef(0);
+  const lastTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -115,20 +120,30 @@ export default function LandingSocialProof() {
   }, []);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!loaded || !container || clients.length === 0) return;
+    const track = trackRef.current;
+    if (!loaded || !track || clients.length === 0) return;
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
 
-    const step = () => {
-      if (container && isVisibleRef.current) {
-        container.scrollLeft += 0.6;
-        const half = container.scrollWidth / 2;
-        if (container.scrollLeft >= half) {
-          container.scrollLeft = 0;
-        }
+    const step = (timestamp: number) => {
+      if (lastTimeRef.current === null) {
+        lastTimeRef.current = timestamp;
       }
+
+      if (isVisibleRef.current && !isHoveredRef.current) {
+        const delta = (timestamp - lastTimeRef.current) / 1000;
+        offsetRef.current += SPEED_PX_PER_SEC * delta;
+
+        const half = track.scrollWidth / 2;
+        if (offsetRef.current >= half) {
+          offsetRef.current -= half;
+        }
+
+        track.style.transform = `translateX(${-offsetRef.current}px)`;
+      }
+
+      lastTimeRef.current = timestamp;
       rafRef.current = requestAnimationFrame(step);
     };
 
@@ -149,17 +164,18 @@ export default function LandingSocialProof() {
   return (
     <div ref={sectionRef} className="mt-14 rounded-2xl border hairline bg-surface py-10 overflow-hidden">
       <div
-        className="relative"
-        style={{ maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)' }}
+        className="relative overflow-hidden"
+        style={{
+          maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
+        }}
+        onMouseEnter={() => { isHoveredRef.current = true; }}
+        onMouseLeave={() => { isHoveredRef.current = false; }}
       >
-        <style>{`.landing-social-proof-track::-webkit-scrollbar { display: none; }`}</style>
         <div
-          ref={containerRef}
-          className="landing-social-proof-track flex items-start overflow-x-scroll"
-          style={{
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-          }}
+          ref={trackRef}
+          className="flex items-start will-change-transform"
+          style={{ width: 'max-content' }}
         >
           {duplicated.map((client, index) =>
             client === null ? (
