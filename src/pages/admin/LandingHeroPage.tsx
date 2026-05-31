@@ -1,4 +1,21 @@
 import { useEffect, useState, useCallback } from 'react';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,6 +52,11 @@ export default function LandingHeroPage() {
   const [savingConfig, setSavingConfig] = useState(false);
   const [editingScreen, setEditingScreen] = useState<HeroScreen | null>(null);
   const [isNewScreen, setIsNewScreen] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -146,6 +168,43 @@ export default function LandingHeroPage() {
     });
     setEditingScreen(null);
     setIsNewScreen(false);
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = screens.findIndex(s => s.id === active.id);
+    const newIndex = screens.findIndex(s => s.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(screens, oldIndex, newIndex).map((s, i) => ({
+      ...s,
+      display_order: i + 1,
+    }));
+
+    setScreens(reordered);
+
+    try {
+      await Promise.all(
+        reordered.map(s =>
+          supabase
+            .from('landing_hero_screens')
+            .update({ display_order: s.display_order, updated_at: new Date().toISOString() })
+            .eq('id', s.id)
+        )
+      );
+      toast.success('Ordem salva!');
+    } catch {
+      toast.error('Erro ao salvar ordem');
+      setScreens(screens);
+    }
   };
 
   if (editingScreen) {
@@ -284,67 +343,171 @@ export default function LandingHeroPage() {
           ) : screens.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-8">Nenhuma tela configurada. Crie uma nova tela acima.</p>
           ) : (
-            <div className="space-y-2">
-              {screens.map((screen) => (
-                <div
-                  key={screen.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
-                    screen.is_active ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-100 opacity-60'
-                  }`}
-                >
-                  <GripVertical className="w-4 h-4 text-gray-400 shrink-0 cursor-grab" />
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-gray-900 truncate">{screen.label}</p>
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 shrink-0">
-                        {SCREEN_TYPE_LABELS[screen.screen_type] || screen.screen_type}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500">Ordem: {screen.display_order}</p>
-                  </div>
-
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleScreenActive(screen)}
-                      title={screen.is_active ? 'Desativar' : 'Ativar'}
-                    >
-                      {screen.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => { setEditingScreen(screen); setIsNewScreen(false); }}
-                      title="Editar"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => duplicateScreen(screen)}
-                      title="Duplicar"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-500 hover:text-red-700"
-                      onClick={() => deleteScreen(screen)}
-                      title="Excluir"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext items={screens.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {screens.map((screen) => (
+                    <SortableScreenItem
+                      key={screen.id}
+                      screen={screen}
+                      onToggleActive={toggleScreenActive}
+                      onEdit={(s) => { setEditingScreen(s); setIsNewScreen(false); }}
+                      onDuplicate={duplicateScreen}
+                      onDelete={deleteScreen}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+
+              <DragOverlay>
+                {activeId ? (() => {
+                  const screen = screens.find(s => s.id === activeId);
+                  return screen ? (
+                    <ScreenItemContent screen={screen} isDragOverlay />
+                  ) : null;
+                })() : null}
+              </DragOverlay>
+            </DndContext>
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function ScreenItemContent({
+  screen,
+  dragHandleProps,
+  isDragging,
+  isDragOverlay,
+  onToggleActive,
+  onEdit,
+  onDuplicate,
+  onDelete,
+}: {
+  screen: HeroScreen;
+  dragHandleProps?: Record<string, any>;
+  isDragging?: boolean;
+  isDragOverlay?: boolean;
+  onToggleActive?: (s: HeroScreen) => void;
+  onEdit?: (s: HeroScreen) => void;
+  onDuplicate?: (s: HeroScreen) => void;
+  onDelete?: (s: HeroScreen) => void;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+        isDragOverlay
+          ? 'bg-white border-blue-300 shadow-lg opacity-95'
+          : isDragging
+          ? 'bg-blue-50 border-blue-200 opacity-50'
+          : screen.is_active
+          ? 'bg-white border-gray-200'
+          : 'bg-gray-50 border-gray-100 opacity-60'
+      }`}
+    >
+      <div
+        {...dragHandleProps}
+        className="cursor-grab active:cursor-grabbing touch-none shrink-0"
+        title="Arrastar para reordenar"
+      >
+        <GripVertical className="w-4 h-4 text-gray-400" />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium text-gray-900 truncate">{screen.label}</p>
+          <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 shrink-0">
+            {SCREEN_TYPE_LABELS[screen.screen_type] || screen.screen_type}
+          </span>
+        </div>
+        <p className="text-xs text-gray-500">Ordem: {screen.display_order}</p>
+      </div>
+
+      {!isDragOverlay && (
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onToggleActive?.(screen)}
+            title={screen.is_active ? 'Desativar' : 'Ativar'}
+          >
+            {screen.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onEdit?.(screen)}
+            title="Editar"
+          >
+            <Pencil className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDuplicate?.(screen)}
+            title="Duplicar"
+          >
+            <Copy className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-red-500 hover:text-red-700"
+            onClick={() => onDelete?.(screen)}
+            title="Excluir"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SortableScreenItem({
+  screen,
+  onToggleActive,
+  onEdit,
+  onDuplicate,
+  onDelete,
+}: {
+  screen: HeroScreen;
+  onToggleActive: (s: HeroScreen) => void;
+  onEdit: (s: HeroScreen) => void;
+  onDuplicate: (s: HeroScreen) => void;
+  onDelete: (s: HeroScreen) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: screen.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <ScreenItemContent
+        screen={screen}
+        dragHandleProps={{ ...attributes, ...listeners }}
+        isDragging={isDragging}
+        onToggleActive={onToggleActive}
+        onEdit={onEdit}
+        onDuplicate={onDuplicate}
+        onDelete={onDelete}
+      />
     </div>
   );
 }
