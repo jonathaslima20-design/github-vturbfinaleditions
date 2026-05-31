@@ -394,6 +394,7 @@ export async function registerUser(
     country_code?: string;
     whatsapp?: string;
     accepted_terms?: boolean;
+    referral_code?: string;
   }
 ): Promise<{
   user: StoredUser | null;
@@ -445,6 +446,19 @@ export async function registerUser(
     // Create user profile in the users table
     console.log('📝 Creating user with WhatsApp:', userData.whatsapp);
 
+    // Resolve referral code to referrer user ID
+    let referredBy: string | null = null;
+    if (userData.referral_code) {
+      const { data: referrer } = await supabase
+        .from('users')
+        .select('id')
+        .eq('referral_code', userData.referral_code)
+        .maybeSingle();
+      if (referrer) {
+        referredBy = referrer.id;
+      }
+    }
+
     const now = new Date().toISOString();
     const { data: userProfile, error: createError } = await supabase
       .from('users')
@@ -459,6 +473,7 @@ export async function registerUser(
         is_blocked: false,
         plan_status: 'free',
         created_at: now,
+        ...(referredBy ? { referred_by: referredBy } : {}),
         ...(userData.accepted_terms ? {
           accepted_terms_at: now,
           accepted_privacy_policy_at: now,

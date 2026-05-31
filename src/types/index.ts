@@ -468,6 +468,8 @@ export type NotificationType =
   | 'new_order'
   | 'low_stock'
   | 'out_of_stock'
+  | 'referral_signup'
+  | 'referral_upgrade'
   | 'system';
 
 export interface AppNotification {

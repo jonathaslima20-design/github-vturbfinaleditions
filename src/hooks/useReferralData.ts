@@ -1,7 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getReferralStats } from '@/lib/referralUtils';
+import { getReferralStats, generateReferralLink } from '@/lib/referralUtils';
 import type { ReferralStats, ReferralCommission, WithdrawalRequest, UserPixKey } from '@/types';
+
+export interface ReferredUser {
+  id: string;
+  name: string | null;
+  email: string;
+  plan_status: string;
+  created_at: string;
+}
 
 interface UseReferralDataReturn {
   stats: ReferralStats | null;
@@ -9,6 +17,8 @@ interface UseReferralDataReturn {
   withdrawals: WithdrawalRequest[];
   pixKeys: UserPixKey[];
   referralLink: string;
+  clickCount: number;
+  referredUsers: ReferredUser[];
   isLoading: boolean;
   error: string | null;
   refreshData: () => Promise<void>;
@@ -20,10 +30,12 @@ export function useReferralData(userId: string | undefined): UseReferralDataRetu
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [pixKeys, setPixKeys] = useState<UserPixKey[]>([]);
   const [referralLink, setReferralLink] = useState('');
+  const [clickCount, setClickCount] = useState(0);
+  const [referredUsers, setReferredUsers] = useState<ReferredUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!userId) {
       setIsLoading(false);
       return;
@@ -33,103 +45,113 @@ export function useReferralData(userId: string | undefined): UseReferralDataRetu
       setIsLoading(true);
       setError(null);
 
-      console.log('[ReferralData] Fetching data for user:', userId);
-
       const { data: user, error: userError } = await supabase
         .from('users')
         .select('referral_code')
         .eq('id', userId)
         .single();
 
-      console.log('[ReferralData] User data:', user, 'Error:', userError);
-
       if (userError) {
-        console.error('[ReferralData] Error fetching user:', userError);
         setError('Erro ao carregar dados do usuário');
       }
 
       let referralCode = user?.referral_code;
 
       if (!referralCode) {
-        console.log('[ReferralData] No referral code found, generating one...');
         referralCode = `REF${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-
-        const { error: updateError } = await supabase
+        await supabase
           .from('users')
           .update({ referral_code: referralCode })
           .eq('id', userId);
-
-        if (updateError) {
-          console.error('[ReferralData] Error updating referral code:', updateError);
-        } else {
-          console.log('[ReferralData] Generated new referral code:', referralCode);
-        }
       }
 
       if (referralCode) {
-        const baseUrl = window.location.origin;
-        setReferralLink(`${baseUrl}/register?ref=${referralCode}`);
+        setReferralLink(generateReferralLink(referralCode));
       }
 
-      console.log('[ReferralData] Fetching referral stats...');
       const referralStats = await getReferralStats(userId);
-      console.log('[ReferralData] Stats:', referralStats);
       setStats(referralStats);
 
-      console.log('[ReferralData] Fetching commissions...');
-      const { data: commissionsData, error: commissionsError } = await supabase
+      // Fetch click count
+      const { count } = await supabase
+        .from('referral_clicks')
+        .select('*', { count: 'exact', head: true })
+        .eq('referrer_id', userId);
+      setClickCount(count || 0);
+
+      // Fetch referred users
+      const { data: referred } = await supabase
+        .from('users')
+        .select('id, name, email, plan_status, created_at')
+        .eq('referred_by', userId)
+        .order('created_at', { ascending: false });
+      setReferredUsers(referred || []);
+
+      // Fetch commissions
+      const { data: commissionsData } = await supabase
         .from('referral_commissions')
-        .select(`
-          *,
-          referred_user:users!referral_commissions_referred_user_id_fkey(name, email),
-          subscription:subscriptions(plan_name, status)
-        `)
+        .select('*')
         .eq('referrer_id', userId)
         .order('created_at', { ascending: false });
-
-      if (commissionsError) {
-        console.error('[ReferralData] Error fetching commissions:', commissionsError);
-      }
-      console.log('[ReferralData] Commissions:', commissionsData);
       setCommissions(commissionsData || []);
 
-      console.log('[ReferralData] Fetching withdrawals...');
-      const { data: withdrawalsData, error: withdrawalsError } = await supabase
+      // Fetch withdrawals
+      const { data: withdrawalsData } = await supabase
         .from('withdrawal_requests')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
-
-      if (withdrawalsError) {
-        console.error('[ReferralData] Error fetching withdrawals:', withdrawalsError);
-      }
-      console.log('[ReferralData] Withdrawals:', withdrawalsData);
       setWithdrawals(withdrawalsData || []);
 
-      console.log('[ReferralData] Fetching PIX keys...');
-      const { data: pixKeysData, error: pixKeysError } = await supabase
+      // Fetch PIX keys
+      const { data: pixKeysData } = await supabase
         .from('user_pix_keys')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
-
-      if (pixKeysError) {
-        console.error('[ReferralData] Error fetching PIX keys:', pixKeysError);
-      }
-      console.log('[ReferralData] PIX keys:', pixKeysData);
       setPixKeys(pixKeysData || []);
 
     } catch (err) {
-      console.error('[ReferralData] Error fetching referral data:', err);
+      console.error('[ReferralData] Error:', err);
       setError('Erro ao carregar dados de indicações');
     } finally {
-      console.log('[ReferralData] Fetch complete, loading:', false);
       setIsLoading(false);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     fetchData();
+  }, [fetchData]);
+
+  // Realtime subscription for referred users plan changes
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`referral-users-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `referred_by=eq.${userId}`,
+        },
+        (payload) => {
+          setReferredUsers((prev) =>
+            prev.map((u) =>
+              u.id === payload.new.id
+                ? { ...u, plan_status: payload.new.plan_status, name: payload.new.name }
+                : u
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   return {
@@ -138,8 +160,10 @@ export function useReferralData(userId: string | undefined): UseReferralDataRetu
     withdrawals,
     pixKeys,
     referralLink,
+    clickCount,
+    referredUsers,
     isLoading,
     error,
-    refreshData: fetchData
+    refreshData: fetchData,
   };
 }

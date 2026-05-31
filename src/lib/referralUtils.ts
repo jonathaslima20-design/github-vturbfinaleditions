@@ -1,16 +1,8 @@
 import { supabase } from './supabase';
 import type { ReferralStats } from '@/types';
 
-/**
- * Utility functions for referral system
- */
-
-/**
- * Get referral statistics for a user
- */
 export async function getReferralStats(userId: string): Promise<ReferralStats> {
   try {
-    // Get all commissions for this user
     const { data: commissions, error: commissionsError } = await supabase
       .from('referral_commissions')
       .select(`
@@ -21,7 +13,6 @@ export async function getReferralStats(userId: string): Promise<ReferralStats> {
 
     if (commissionsError) throw commissionsError;
 
-    // Get withdrawal requests
     const { data: withdrawals, error: withdrawalsError } = await supabase
       .from('withdrawal_requests')
       .select('amount, status')
@@ -29,12 +20,10 @@ export async function getReferralStats(userId: string): Promise<ReferralStats> {
 
     if (withdrawalsError) throw withdrawalsError;
 
-    // Calculate stats
     const totalCommissions = commissions?.reduce((sum, c) => sum + c.amount, 0) || 0;
     const pendingCommissions = commissions?.filter(c => c.status === 'pending').reduce((sum, c) => sum + c.amount, 0) || 0;
     const paidCommissions = commissions?.filter(c => c.status === 'paid').reduce((sum, c) => sum + c.amount, 0) || 0;
-    
-    // Calculate available for withdrawal (pending commissions - pending/approved withdrawals)
+
     const pendingWithdrawals = withdrawals?.filter(w => w.status === 'pending' || w.status === 'approved').reduce((sum, w) => sum + w.amount, 0) || 0;
     const availableForWithdrawal = Math.max(0, pendingCommissions - pendingWithdrawals);
 
@@ -59,20 +48,13 @@ export async function getReferralStats(userId: string): Promise<ReferralStats> {
   }
 }
 
-/**
- * Generate referral link for a user
- */
-export function generateReferralLink(referralCode: string, baseUrl?: string): string {
-  const base = baseUrl || window.location.origin;
-  return `${base}/register?ref=${referralCode}`;
+export function generateReferralLink(referralCode: string): string {
+  return `https://vitrineturbo.com/?ref=${referralCode}`;
 }
 
-/**
- * Validate PIX key format based on type
- */
 export function validatePixKey(key: string, type: string): boolean {
-  const cleanKey = key.replace(/\D/g, ''); // Remove non-digits for CPF/CNPJ/Phone
-  
+  const cleanKey = key.replace(/\D/g, '');
+
   switch (type) {
     case 'cpf':
       return cleanKey.length === 11;
@@ -83,15 +65,12 @@ export function validatePixKey(key: string, type: string): boolean {
     case 'email':
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(key);
     case 'random':
-      return key.length >= 8; // Minimum length for random keys
+      return key.length >= 8;
     default:
       return false;
   }
 }
 
-/**
- * Format PIX key for display
- */
 export function formatPixKey(key: string, type: string): string {
   switch (type) {
     case 'cpf':
@@ -113,19 +92,44 @@ export function formatPixKey(key: string, type: string): string {
   }
 }
 
-/**
- * Get commission amount based on plan type
- */
 export function getCommissionAmount(planType: string): number {
   const planLower = planType.toLowerCase();
-  
-  if (planLower.includes('trimestral') || planLower.includes('3')) {
+
+  if (planLower.includes('trimestral') || planLower.includes('quarterly')) {
     return 50.00;
-  } else if (planLower.includes('semestral') || planLower.includes('6')) {
+  } else if (planLower.includes('semestral') || planLower.includes('semiannually')) {
     return 70.00;
-  } else if (planLower.includes('anual') || planLower.includes('12') || planLower.includes('ano')) {
+  } else if (planLower.includes('anual') || planLower.includes('annually')) {
     return 100.00;
   }
-  
+
   return 0.00;
+}
+
+export async function trackReferralClick(referralCode: string): Promise<void> {
+  try {
+    const { data: referrer } = await supabase
+      .from('users')
+      .select('id')
+      .eq('referral_code', referralCode)
+      .maybeSingle();
+
+    if (referrer) {
+      await supabase.from('referral_clicks').insert({
+        referral_code: referralCode,
+        referrer_id: referrer.id,
+        visitor_id: getSessionVisitorId(),
+      });
+    }
+  } catch { /* silent */ }
+}
+
+function getSessionVisitorId(): string {
+  const key = 'vt_visitor_id';
+  let id = sessionStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    sessionStorage.setItem(key, id);
+  }
+  return id;
 }

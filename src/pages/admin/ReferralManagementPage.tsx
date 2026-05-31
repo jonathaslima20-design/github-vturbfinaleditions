@@ -23,7 +23,7 @@ import { formatPixKey } from '@/lib/referralUtils';
 
 interface ReferralSettings {
   id: string;
-  commission_mensal: number;
+  commission_trimestral: number;
   commission_semestral: number;
   commission_anual: number;
   minimum_withdrawal_amount: number;
@@ -151,7 +151,7 @@ export default function ReferralManagementPage() {
       const { error } = await supabase
         .from('referral_settings')
         .update({
-          commission_mensal: settings.commission_mensal,
+          commission_trimestral: settings.commission_trimestral,
           commission_semestral: settings.commission_semestral,
           commission_anual: settings.commission_anual,
           minimum_withdrawal_amount: settings.minimum_withdrawal_amount,
@@ -256,12 +256,12 @@ export default function ReferralManagementPage() {
 
                   <div className="grid gap-4 md:grid-cols-3">
                     <div className="space-y-2">
-                      <Label>Comissão Mensal (R$)</Label>
+                      <Label>Comissao Trimestral (R$)</Label>
                       <Input
                         type="number"
                         step="0.01"
-                        value={settings.commission_mensal}
-                        onChange={(e) => setSettings({ ...settings, commission_mensal: parseFloat(e.target.value) || 0 })}
+                        value={settings.commission_trimestral}
+                        onChange={(e) => setSettings({ ...settings, commission_trimestral: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
                     <div className="space-y-2">

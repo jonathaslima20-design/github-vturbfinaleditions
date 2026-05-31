@@ -1,4 +1,4 @@
-import { MessageSquare, Eye, CreditCard, Phone, Tag, Info, X, ShoppingBag, TriangleAlert as AlertTriangle, PackageX } from 'lucide-react';
+import { MessageSquare, Eye, CreditCard, Phone, Tag, Info, X, ShoppingBag, TriangleAlert as AlertTriangle, PackageX, Gift, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AppNotification, NotificationType } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -14,6 +14,8 @@ const ICON_MAP: Record<NotificationType, React.ElementType> = {
   new_order: ShoppingBag,
   low_stock: AlertTriangle,
   out_of_stock: PackageX,
+  referral_signup: UserPlus,
+  referral_upgrade: Gift,
   system: Info,
 };
 
@@ -27,6 +29,8 @@ const COLOR_MAP: Record<NotificationType, string> = {
   new_order: 'text-teal-500 bg-teal-500/10',
   low_stock: 'text-amber-600 bg-amber-500/10',
   out_of_stock: 'text-red-600 bg-red-500/10',
+  referral_signup: 'text-cyan-500 bg-cyan-500/10',
+  referral_upgrade: 'text-emerald-600 bg-emerald-500/10',
   system: 'text-muted-foreground bg-muted',
 };
 

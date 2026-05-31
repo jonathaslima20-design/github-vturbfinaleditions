@@ -78,8 +78,8 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const { openModal } = useSubscriptionModal();
 
-  // Capturar código de indicação da URL
-  const referralCode = searchParams.get('ref');
+  // Capturar código de indicação da URL ou localStorage
+  const referralCode = searchParams.get('ref') || localStorage.getItem('vitrineturbo_ref_code');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -113,6 +113,7 @@ export default function RegisterPage() {
           country_code: data.country_code,
           whatsapp: cleanedWhatsApp,
           accepted_terms: data.accepted_terms,
+          referral_code: referralCode || undefined,
         }
       );
 
@@ -128,6 +129,8 @@ export default function RegisterPage() {
         return;
       }
 
+      // Clear referral code from localStorage after successful registration
+      localStorage.removeItem('vitrineturbo_ref_code');
       toast.success('Cadastro realizado com sucesso!');
       openModal(false);
       navigate('/dashboard');

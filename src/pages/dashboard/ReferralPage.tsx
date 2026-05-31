@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReferralData } from '@/hooks/useReferralData';
 import { formatCurrencyI18n } from '@/lib/i18n';
@@ -7,7 +8,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Gift, Users, DollarSign, CircleCheck as CheckCircle2, TrendingUp, Share2, UserPlus, Zap, Crown, CreditCard, Copy, CircleAlert as AlertCircle, Lock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Gift, Users, DollarSign, CircleCheck as CheckCircle2, TrendingUp,
+  Share2, UserPlus, MousePointerClick, Crown, CreditCard, Copy,
+  CircleAlert as AlertCircle, Lock, MessageCircle, Send, FileText,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import PixKeyDialog from '@/components/referral/PixKeyDialog';
 import WithdrawalDialog from '@/components/referral/WithdrawalDialog';
@@ -20,7 +34,7 @@ function PremiumLockOverlay({ onUpgrade }: { onUpgrade: () => void }) {
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
           <Lock className="h-4 w-4 text-muted-foreground" />
         </div>
-        <p className="text-sm font-medium">Disponível em planos pagos</p>
+        <p className="text-sm font-medium">Disponivel em planos pagos</p>
         <Button size="sm" onClick={onUpgrade} className="mt-1">
           Fazer Upgrade
         </Button>
@@ -29,9 +43,29 @@ function PremiumLockOverlay({ onUpgrade }: { onUpgrade: () => void }) {
   );
 }
 
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  if (!domain) return email;
+  const visible = local.substring(0, 2);
+  return `${visible}***@${domain}`;
+}
+
+function getPlanBadge(planStatus: string) {
+  switch (planStatus) {
+    case 'active':
+      return <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">Ativo</Badge>;
+    case 'free':
+      return <Badge variant="secondary">Gratis</Badge>;
+    case 'expired':
+      return <Badge variant="outline" className="text-orange-600 border-orange-300">Expirado</Badge>;
+    default:
+      return <Badge variant="secondary">{planStatus}</Badge>;
+  }
+}
+
 export default function ReferralPage() {
   const { user } = useAuth();
-  const { stats, pixKeys, referralLink, isLoading, refreshData, error } = useReferralData(user?.id);
+  const { stats, pixKeys, referralLink, clickCount, referredUsers, isLoading, refreshData, error } = useReferralData(user?.id);
   const [showPixDialog, setShowPixDialog] = useState(false);
   const [showWithdrawalDialog, setShowWithdrawalDialog] = useState(false);
   const { openModal } = useSubscriptionModal();
@@ -39,21 +73,61 @@ export default function ReferralPage() {
   const isFreePlan = user?.plan_status === 'free' || user?.plan_status === 'expired';
 
   const copyToClipboard = async () => {
+    if (isFreePlan) {
+      toast('O programa Indique e Ganhe esta disponivel apenas para usuarios com plano ativo.', {
+        description: 'Faca upgrade para comecar a ganhar com indicacoes!',
+        action: {
+          label: 'Fazer Upgrade',
+          onClick: () => openModal(false),
+        },
+      });
+      return;
+    }
     try {
       await navigator.clipboard.writeText(referralLink);
-      toast.success('Link copiado para área de transferência!');
+      toast.success('Link copiado para area de transferencia!');
     } catch {
       toast.error('Erro ao copiar link');
     }
+  };
+
+  const shareViaWhatsApp = () => {
+    if (isFreePlan) {
+      toast('O programa Indique e Ganhe esta disponivel apenas para usuarios com plano ativo.', {
+        description: 'Faca upgrade para comecar a ganhar com indicacoes!',
+        action: {
+          label: 'Fazer Upgrade',
+          onClick: () => openModal(false),
+        },
+      });
+      return;
+    }
+    const text = encodeURIComponent(`Crie sua vitrine online no VitrineTurbo! Cadastre-se aqui: ${referralLink}`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
+  const shareViaTelegram = () => {
+    if (isFreePlan) {
+      toast('O programa Indique e Ganhe esta disponivel apenas para usuarios com plano ativo.', {
+        description: 'Faca upgrade para comecar a ganhar com indicacoes!',
+        action: {
+          label: 'Fazer Upgrade',
+          onClick: () => openModal(false),
+        },
+      });
+      return;
+    }
+    const text = encodeURIComponent(`Crie sua vitrine online no VitrineTurbo! Cadastre-se aqui: ${referralLink}`);
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${text}`, '_blank');
   };
 
   if (isLoading) {
     return (
       <div className="container mx-auto p-4 md:p-6 space-y-6 max-w-7xl">
         <Skeleton className="h-32 w-full" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-32" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-28" />
           ))}
         </div>
       </div>
@@ -66,7 +140,7 @@ export default function ReferralPage() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            {error || 'Não foi possível gerar seu link de indicação. Por favor, recarregue a página.'}
+            {error || 'Nao foi possivel gerar seu link de indicacao. Por favor, recarregue a pagina.'}
           </AlertDescription>
         </Alert>
         <Button onClick={refreshData} className="w-full max-w-md mx-auto block">
@@ -85,91 +159,183 @@ export default function ReferralPage() {
         </div>
         <h1 className="text-4xl font-bold">Indique e Ganhe</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Compartilhe o VitrineTurbo com amigos e ganhe <span className="font-bold text-foreground">até R$ 100</span> por cada indicação que ativar um plano
+          Compartilhe o VitrineTurbo com amigos e ganhe <span className="font-bold text-foreground">ate R$ 100</span> por cada indicacao que ativar um plano
         </p>
       </div>
 
-      {/* Empty State Banner - Show when no referrals yet */}
-      {(stats?.totalReferrals || 0) === 0 && (
+      {/* Empty State Banner */}
+      {referredUsers.length === 0 && (
         <Alert className="border-slate-900 dark:border-slate-100 bg-slate-50 dark:bg-slate-900/20">
           <Share2 className="h-4 w-4" />
           <AlertDescription className="text-sm">
-            <strong>Comece agora!</strong> Compartilhe seu link de indicação e ganhe até R$ 100 por cada amigo que ativar um plano.
+            <strong>Comece agora!</strong> Compartilhe seu link de indicacao e ganhe ate R$ 100 por cada amigo que ativar um plano.
           </AlertDescription>
         </Alert>
       )}
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Indicações</CardTitle>
+            <CardTitle className="text-xs font-medium">Cliques no Link</CardTitle>
+            <MousePointerClick className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{clickCount}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xs font-medium">Total de Indicados</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stats?.totalReferrals || 0}</div>
+            <div className="text-2xl font-bold">{referredUsers.length}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {stats?.activeReferrals || 0} com planos ativos
+              {stats?.activeReferrals || 0} com plano ativo
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Comissões Totais</CardTitle>
+            <CardTitle className="text-xs font-medium">Comissoes Totais</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{formatCurrencyI18n(stats?.totalCommissions || 0, 'BRL', 'pt-BR')}</div>
-            <p className="text-xs text-muted-foreground mt-1">Valor total gerado</p>
+            <div className="text-2xl font-bold">{formatCurrencyI18n(stats?.totalCommissions || 0, 'BRL', 'pt-BR')}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Disponível para Saque</CardTitle>
+            <CardTitle className="text-xs font-medium">Disponivel p/ Saque</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{formatCurrencyI18n(stats?.availableForWithdrawal || 0, 'BRL', 'pt-BR')}</div>
-            <p className="text-xs text-muted-foreground mt-1">Pronto para retirada</p>
+            <div className="text-2xl font-bold">{formatCurrencyI18n(stats?.availableForWithdrawal || 0, 'BRL', 'pt-BR')}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Comissões Pagas</CardTitle>
+            <CardTitle className="text-xs font-medium">Comissoes Pagas</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{formatCurrencyI18n(stats?.paidCommissions || 0, 'BRL', 'pt-BR')}</div>
-            <p className="text-xs text-muted-foreground mt-1">Já recebidas</p>
+            <div className="text-2xl font-bold">{formatCurrencyI18n(stats?.paidCommissions || 0, 'BRL', 'pt-BR')}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Referral Link Section */}
-      <Card className="relative overflow-hidden">
-        {isFreePlan && <PremiumLockOverlay onUpgrade={() => openModal(false)} />}
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Share2 className="h-5 w-5" />
-            Seu Link de Indicação
+            Seu Link de Indicacao
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="flex gap-2">
             <Input
-              value={isFreePlan ? 'https://vitrine.app/r/seulink' : referralLink}
+              value={referralLink}
               readOnly
               className="font-mono text-sm"
-              tabIndex={isFreePlan ? -1 : undefined}
             />
-            <Button onClick={copyToClipboard} className="shrink-0" disabled={isFreePlan} tabIndex={isFreePlan ? -1 : undefined}>
+            <Button onClick={copyToClipboard} className="shrink-0">
               <Copy className="h-4 w-4 mr-2" />
               Copiar
             </Button>
           </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={shareViaWhatsApp} className="gap-2">
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
+            </Button>
+            <Button variant="outline" size="sm" onClick={shareViaTelegram} className="gap-2">
+              <Send className="h-4 w-4" />
+              Telegram
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Commission Plans */}
+      <div className="grid md:grid-cols-3 gap-4">
+        <Card className="border-blue-200 dark:border-blue-800">
+          <CardContent className="pt-6 text-center space-y-2">
+            <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30">
+              <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="text-3xl font-bold">R$ 50</div>
+            <div className="text-sm text-muted-foreground">Plano Trimestral</div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-emerald-200 dark:border-emerald-800">
+          <CardContent className="pt-6 text-center space-y-2">
+            <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+              <Crown className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="text-3xl font-bold">R$ 70</div>
+            <div className="text-sm text-muted-foreground">Plano Semestral</div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
+          <CardContent className="pt-6 text-center space-y-2">
+            <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30">
+              <Gift className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="text-3xl font-bold">R$ 100</div>
+            <div className="text-sm text-muted-foreground">Plano Anual</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Referred Users Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Seus Indicados
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {referredUsers.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground">
+              <UserPlus className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">Nenhum indicado ainda.</p>
+              <p className="text-xs mt-1">Compartilhe seu link e comece a ganhar!</p>
+            </div>
+          ) : (
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Data de Cadastro</TableHead>
+                    <TableHead>Plano</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {referredUsers.map((referred) => (
+                    <TableRow key={referred.id}>
+                      <TableCell className="font-medium">{referred.name || '\u2014'}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{maskEmail(referred.email)}</TableCell>
+                      <TableCell className="text-sm">
+                        {new Date(referred.created_at).toLocaleDateString('pt-BR')}
+                      </TableCell>
+                      <TableCell>{getPlanBadge(referred.plan_status)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -189,7 +355,7 @@ export default function ReferralPage() {
               </div>
               <h3 className="font-semibold">1. Compartilhe</h3>
               <p className="text-sm text-muted-foreground">
-                Envie seu link de indicação para amigos e conhecidos
+                Envie seu link de indicacao para amigos e conhecidos
               </p>
             </div>
 
@@ -199,7 +365,7 @@ export default function ReferralPage() {
               </div>
               <h3 className="font-semibold">2. Eles se Cadastram</h3>
               <p className="text-sm text-muted-foreground">
-                Seus amigos criam conta e ativam um plano
+                Seus amigos criam conta e ativam um plano pago
               </p>
             </div>
 
@@ -207,45 +373,17 @@ export default function ReferralPage() {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-900 dark:bg-slate-100">
                 <DollarSign className="h-6 w-6 text-white dark:text-slate-900" />
               </div>
-              <h3 className="font-semibold">3. Você Ganha</h3>
+              <h3 className="font-semibold">3. Voce Ganha</h3>
               <p className="text-sm text-muted-foreground">
-                Receba sua comissão automaticamente
+                Receba sua comissao automaticamente
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Commission Plans */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <Card className="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900">
-          <CardContent className="pt-6 text-center space-y-2">
-            <Zap className="h-8 w-8 mx-auto" />
-            <div className="text-3xl font-bold">R$ 17</div>
-            <div className="text-sm opacity-90">Plano Mensal</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6 text-center space-y-2">
-            <Crown className="h-8 w-8 mx-auto" />
-            <div className="text-3xl font-bold">R$ 70</div>
-            <div className="text-sm text-muted-foreground">Plano Semestral</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6 text-center space-y-2">
-            <TrendingUp className="h-8 w-8 mx-auto" />
-            <div className="text-3xl font-bold">R$ 100</div>
-            <div className="text-sm text-muted-foreground">Plano Anual</div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* PIX and Withdrawal Section */}
       <div className="grid md:grid-cols-2 gap-4">
-        {/* PIX Key Card */}
         <Card className="relative overflow-hidden">
           {isFreePlan && <PremiumLockOverlay onUpgrade={() => openModal(false)} />}
           <CardHeader>
@@ -288,7 +426,6 @@ export default function ReferralPage() {
           </CardContent>
         </Card>
 
-        {/* Withdrawal Card */}
         <Card className="relative overflow-hidden">
           {isFreePlan && <PremiumLockOverlay onUpgrade={() => openModal(false)} />}
           <CardHeader>
@@ -302,7 +439,7 @@ export default function ReferralPage() {
               <div className="text-4xl font-bold">
                 {formatCurrencyI18n(stats?.availableForWithdrawal || 0, 'BRL', 'pt-BR')}
               </div>
-              <p className="text-sm text-muted-foreground mt-1">Disponível para saque</p>
+              <p className="text-sm text-muted-foreground mt-1">Disponivel para saque</p>
             </div>
 
             {(stats?.availableForWithdrawal || 0) >= 50 ? (
@@ -323,10 +460,21 @@ export default function ReferralPage() {
             <p className="text-xs text-center text-muted-foreground">
               {pixKeys.length === 0
                 ? 'Configure sua chave PIX primeiro'
-                : 'Valor mínimo para saque: R$ 50,00'}
+                : 'Valor minimo para saque: R$ 50,00'}
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Terms Link */}
+      <div className="text-center py-4">
+        <Link
+          to="/termos-indicacoes"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <FileText className="h-4 w-4" />
+          Termos e Condicoes do Programa de Indicacoes
+        </Link>
       </div>
 
       {/* Dialogs */}

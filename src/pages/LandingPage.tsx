@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Plus, Package, MessageCircle, Gift, Globe as Globe2, ChartBar as BarChart3, Check, X, Zap, TrendingUp, Users, LogIn, ShoppingCart, Radio, Box, ClipboardList, Tag, Code as Code2, Palette, Globe, Shield, TriangleAlert as AlertTriangle, Percent, Timer } from 'lucide-react';
 import HeroPhoneCarousel from '@/components/landing/HeroPhoneCarousel';
 import { supabase } from '@/lib/supabase';
@@ -119,7 +119,55 @@ function useReveal() {
   }, []);
 }
 
-function Header() {
+function useReferralTracking() {
+  const [searchParams] = useSearchParams();
+  const [refCode, setRefCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    const ref = searchParams.get('ref') || localStorage.getItem('vitrineturbo_ref_code');
+    if (!ref) return;
+
+    setRefCode(ref);
+    localStorage.setItem('vitrineturbo_ref_code', ref);
+
+    // Track click (fire-and-forget)
+    (async () => {
+      try {
+        const { data: user } = await supabase
+          .from('users')
+          .select('id')
+          .eq('referral_code', ref)
+          .maybeSingle();
+
+        if (user) {
+          await supabase.from('referral_clicks').insert({
+            referral_code: ref,
+            referrer_id: user.id,
+            visitor_id: getVisitorId(),
+          });
+        }
+      } catch { /* silent */ }
+    })();
+  }, [searchParams]);
+
+  return refCode;
+}
+
+function getVisitorId(): string {
+  const key = 'vt_visitor_id';
+  let id = sessionStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    sessionStorage.setItem(key, id);
+  }
+  return id;
+}
+
+function getRegisterHref(refCode: string | null): string {
+  return refCode ? `/register?ref=${refCode}` : '/register';
+}
+
+function Header({ refCode }: { refCode: string | null }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -165,7 +213,7 @@ function Header() {
   );
 }
 
-function Hero() {
+function Hero({ refCode }: { refCode: string | null }) {
   return (
     <section id="top" className="relative pt-36 pb-24 lg:pt-44 lg:pb-32 overflow-hidden bg-white">
       <div className="grid-bg" />
@@ -182,7 +230,7 @@ function Hero() {
             Catálogo, estoque, pedidos, cupons, domínio próprio e API de integração. Tudo que você precisa em um único lugar, sem taxa sobre vendas.
           </p>
           <div className="flex flex-wrap items-center gap-3 mt-8">
-            <a href="/register" className="btn-primary rounded-full px-7 py-4 font-display font-medium text-[15px] inline-flex items-center gap-2">
+            <a href={getRegisterHref(refCode)} className="btn-primary rounded-full px-7 py-4 font-display font-medium text-[15px] inline-flex items-center gap-2">
               Começar Grátis
               <ArrowRight size={16} />
             </a>
@@ -488,7 +536,7 @@ function BentoGrid() {
   );
 }
 
-function ProFeaturesSection() {
+function ProFeaturesSection({ refCode }: { refCode: string | null }) {
   return (
     <section id="integracoes" className="py-24 lg:py-32 bg-surface border-t hairline" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 700px' }}>
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
@@ -628,7 +676,7 @@ function DifferentiationSection() {
               voltadas para o seu negócio.
             </p>
             <div className="mt-8">
-              <a href="/register" className="btn-primary rounded-full px-7 py-3.5 font-display font-medium text-[14px] inline-flex items-center gap-2">
+              <a href={getRegisterHref(refCode)} className="btn-primary rounded-full px-7 py-3.5 font-display font-medium text-[14px] inline-flex items-center gap-2">
                 Criar Minha Loja
                 <ArrowRight size={14} />
               </a>
@@ -739,12 +787,14 @@ function PricingCard({
   price,
   featured = false,
   benefits,
+  refCode,
 }: {
   tag: string;
   name: string;
   price: string;
   featured?: boolean;
   benefits: string[];
+  refCode: string | null;
 }) {
   return (
     <div
@@ -782,7 +832,7 @@ function PricingCard({
         ))}
       </ul>
       <a
-        href="/register"
+        href={getRegisterHref(refCode)}
         className={`mt-8 rounded-full px-6 py-3.5 font-display font-medium text-[14px] inline-flex items-center justify-center gap-2 transition-colors ${
           featured
             ? 'bg-white text-ink-900 hover:bg-white/90'
@@ -809,7 +859,7 @@ function SocialProofSection() {
   );
 }
 
-function PricingSection() {
+function PricingSection({ refCode }: { refCode: string | null }) {
   const allPaidBenefits = [
     'Produtos ilimitados',
     'Categorias e tags ilimitadas',
@@ -882,7 +932,7 @@ function PricingSection() {
               ))}
             </ul>
             <a
-              href="/register"
+              href={getRegisterHref(refCode)}
               className="mt-8 rounded-full px-6 py-3.5 font-display font-medium text-[14px] inline-flex items-center justify-center gap-2 transition-colors border-2 border-ink-900 text-ink-900 hover:bg-ink-900 hover:text-white"
             >
               Começar grátis
@@ -895,12 +945,14 @@ function PricingSection() {
             name="Trimestral"
             price="R$ 149,00"
             benefits={allPaidBenefits}
+            refCode={refCode}
           />
           <PricingCard
             tag="Mais escolhido"
             name="Semestral"
             price="R$ 229,00"
             benefits={allPaidBenefits}
+            refCode={refCode}
           />
           <PricingCard
             tag="Melhor valor"
@@ -908,6 +960,7 @@ function PricingSection() {
             price="R$ 336,00"
             featured
             benefits={anualBenefits}
+            refCode={refCode}
           />
         </div>
       </div>
@@ -982,7 +1035,7 @@ function FaqSection() {
   );
 }
 
-function FinalCTA() {
+function FinalCTA({ refCode }: { refCode: string | null }) {
   return (
     <section id="cta" className="py-24 lg:py-32 bg-white border-t hairline">
       <div className="max-w-5xl mx-auto px-6 lg:px-10 text-center">
@@ -993,7 +1046,7 @@ function FinalCTA() {
           Estoque, pedidos, cupons, domínio próprio e API de integração. Sem taxa sobre vendas.
         </p>
         <div className="reveal mt-10">
-          <a href="/register" className="btn-primary rounded-full px-8 py-4 text-[15px] font-display font-medium inline-flex items-center gap-2">
+          <a href={getRegisterHref(refCode)} className="btn-primary rounded-full px-8 py-4 text-[15px] font-display font-medium inline-flex items-center gap-2">
             Começar Agora
             <ArrowRight size={16} />
           </a>
@@ -1085,18 +1138,19 @@ function FooterLanding() {
 export default function LandingPage() {
   useReveal();
   useLandingTracking();
+  const refCode = useReferralTracking();
   return (
     <div className="vt-root min-h-screen bg-white text-ink-900">
-      <Header />
-      <Hero />
+      <Header refCode={refCode} />
+      <Hero refCode={refCode} />
       <BentoGrid />
-      <ProFeaturesSection />
+      <ProFeaturesSection refCode={refCode} />
       <DifferentiationSection />
       <AnalyticsSection />
       <SocialProofSection />
-      <PricingSection />
+      <PricingSection refCode={refCode} />
       <FaqSection />
-      <FinalCTA />
+      <FinalCTA refCode={refCode} />
       <FooterLanding />
     </div>
   );

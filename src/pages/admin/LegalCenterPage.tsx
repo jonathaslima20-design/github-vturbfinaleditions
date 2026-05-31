@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Cookie, ShieldCheck, ExternalLink, Copy, Check, RefreshCw, Loader as Loader2, Clock, Tag, Pencil } from 'lucide-react';
+import { FileText, Cookie, ShieldCheck, Gift, ExternalLink, Copy, Check, RefreshCw, Loader as Loader2, Clock, Tag, Pencil } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,12 +56,22 @@ const DOC_DEFINITIONS: DocDef[] = [
   },
   {
     type: 'cookies_policy',
-    title: 'Política de Cookies',
-    description: 'Quais cookies são utilizados e como o usuário pode gerenciá-los.',
+    title: 'Politica de Cookies',
+    description: 'Quais cookies sao utilizados e como o usuario pode gerencia-los.',
     publicPath: '/politica-de-cookies',
     icon: <Cookie className="h-5 w-5" />,
     accentClass: 'text-amber-600',
     iconBgClass: 'bg-amber-50 dark:bg-amber-950/40',
+    defaultVersion: '1.0',
+  },
+  {
+    type: 'referral_terms',
+    title: 'Termos do Programa de Indicacoes',
+    description: 'Regras, elegibilidade, comissoes e condicoes do programa Indique e Ganhe.',
+    publicPath: '/termos-indicacoes',
+    icon: <Gift className="h-5 w-5" />,
+    accentClass: 'text-teal-600',
+    iconBgClass: 'bg-teal-50 dark:bg-teal-950/40',
     defaultVersion: '1.0',
   },
 ];

@@ -35,6 +35,7 @@ import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage.tsx';
 import CookiesPolicyPage from '@/pages/CookiesPolicyPage.tsx';
 import TermsOfUsePage from '@/pages/TermsOfUsePage.tsx';
 import DataDeletionPage from '@/pages/DataDeletionPage.tsx';
+import ReferralTermsPage from '@/pages/ReferralTermsPage.tsx';
 
 // Dashboard Pages
 import DashboardPage from '@/pages/dashboard/DashboardPage.tsx';
@@ -197,6 +198,7 @@ function AppContent() {
           <Route path="/politica-de-privacidade" element={<PrivacyPolicyPage />} />
           <Route path="/politica-de-cookies" element={<CookiesPolicyPage />} />
           <Route path="/termos-de-uso" element={<TermsOfUsePage />} />
+          <Route path="/termos-indicacoes" element={<ReferralTermsPage />} />
           <Route path="/excluir-minha-conta" element={<DataDeletionPage />} />
         </Route>
 
