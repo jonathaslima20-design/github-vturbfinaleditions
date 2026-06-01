@@ -24,8 +24,7 @@ export function useHasActiveCoupons(storeOwnerId: string | undefined) {
         .eq('user_id', storeOwnerId!)
         .eq('is_active', true)
         .lte('valid_from', now)
-        .or(`valid_until.is.null,valid_until.gte.${now}`)
-        .or(`max_uses.is.null,current_uses.lt.max_uses`);
+        .or(`valid_until.is.null,valid_until.gte.${now}`);
 
       if (!cancelled) {
         setHasActiveCoupons(!error && (count ?? 0) > 0);

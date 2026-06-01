@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Order, OrderItem, OrderStatus } from '@/types';
+import type { Order, OrderStatus } from '@/types';
 import { deductStockForOrder } from '@/lib/stockUtils';
 
 interface CreateOrderData {
@@ -46,48 +46,7 @@ export async function createOrder(
   items: CreateOrderItemData[],
   autoDeduct?: AutoDeductConfig
 ): Promise<Order | null> {
-  const insertPayload: Record<string, unknown> = {
-    store_owner_id: orderData.store_owner_id,
-    customer_name: orderData.customer_name,
-    customer_whatsapp: orderData.customer_whatsapp,
-    customer_country_code: orderData.customer_country_code,
-    order_type: orderData.order_type,
-    subtotal: orderData.subtotal,
-    total: orderData.total,
-    notes: orderData.notes || '',
-    whatsapp_message: orderData.whatsapp_message || '',
-    source: orderData.source,
-  };
-
-  if (orderData.coupon_id) {
-    insertPayload.coupon_id = orderData.coupon_id;
-    insertPayload.coupon_code = orderData.coupon_code;
-    insertPayload.discount_amount = orderData.discount_amount || 0;
-  }
-
-  if (orderData.payment_method) {
-    insertPayload.payment_method = orderData.payment_method;
-    insertPayload.payment_method_discount = orderData.payment_method_discount || 0;
-  }
-
-  if (orderData.delivery_option) {
-    insertPayload.delivery_option = orderData.delivery_option;
-    insertPayload.delivery_fee = orderData.delivery_fee || 0;
-  }
-
-  const { data: order, error: orderError } = await supabase
-    .from('orders')
-    .insert(insertPayload)
-    .select()
-    .maybeSingle();
-
-  if (orderError || !order) {
-    console.error('Error creating order:', orderError);
-    return null;
-  }
-
   const orderItems = items.map((item) => ({
-    order_id: order.id,
     product_id: item.product_id,
     product_title: item.product_title,
     product_image_url: item.product_image_url || '',
@@ -101,13 +60,33 @@ export async function createOrder(
     subtotal: item.subtotal,
   }));
 
-  const { error: itemsError } = await supabase
-    .from('order_items')
-    .insert(orderItems);
+  const { data, error: rpcError } = await supabase.rpc('create_order_complete', {
+    p_store_owner_id: orderData.store_owner_id,
+    p_customer_name: orderData.customer_name,
+    p_customer_whatsapp: orderData.customer_whatsapp,
+    p_customer_country_code: orderData.customer_country_code,
+    p_order_type: orderData.order_type,
+    p_subtotal: orderData.subtotal,
+    p_total: orderData.total,
+    p_notes: orderData.notes || '',
+    p_whatsapp_message: orderData.whatsapp_message || '',
+    p_source: orderData.source,
+    p_coupon_id: orderData.coupon_id || null,
+    p_coupon_code: orderData.coupon_code || null,
+    p_discount_amount: orderData.discount_amount || 0,
+    p_payment_method: orderData.payment_method || null,
+    p_payment_method_discount: orderData.payment_method_discount || 0,
+    p_delivery_fee: orderData.delivery_fee || 0,
+    p_delivery_option: orderData.delivery_option || null,
+    p_items: orderItems,
+  });
 
-  if (itemsError) {
-    console.error('Error creating order items:', itemsError);
+  if (rpcError || !data?.success) {
+    console.error('Error creating order:', rpcError || data?.error);
+    return null;
   }
+
+  const orderId = data.order_id;
 
   if (autoDeduct?.enabled) {
     const deductionItems = items.map((item) => ({
@@ -118,14 +97,14 @@ export async function createOrder(
       selected_flavor: item.selected_flavor,
       selected_variant_label: item.selected_variant_label,
     }));
-    await deductStockForOrder(order.id, autoDeduct.storeOwnerId, deductionItems);
+    await deductStockForOrder(orderId, autoDeduct.storeOwnerId, deductionItems);
   }
 
   if (orderData.coupon_id && orderData.discount_amount) {
     try {
       await supabase.rpc('apply_coupon_usage', {
         p_coupon_id: orderData.coupon_id,
-        p_order_id: order.id,
+        p_order_id: orderId,
         p_customer_whatsapp: orderData.customer_whatsapp,
         p_discount_applied: orderData.discount_amount,
         p_order_type: orderData.order_type,
@@ -135,7 +114,7 @@ export async function createOrder(
     }
   }
 
-  return order as Order;
+  return { id: orderId } as Order;
 }
 
 interface FetchOrdersFilters {
