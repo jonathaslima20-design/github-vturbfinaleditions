@@ -395,6 +395,205 @@ body {
     border-radius: var(--sf-radius-btn) !important;
   }
 
+  /* ─── Storefront default light theme (no custom appearance active) ─── */
+  .storefront-default {
+    --sd-bg: #F8F7F5;
+    --sd-surface: #FFFFFF;
+    --sd-text: #18181B;
+    --sd-heading: #09090B;
+    --sd-muted: #71717A;
+    --sd-border: #E4E4E7;
+    --sd-primary: #2563EB;
+    --sd-primary-fg: #FFFFFF;
+    --sd-primary-hover: #1D4ED8;
+    --sd-card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+    --sd-card-shadow-hover: 0 4px 16px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
+    background-color: var(--sd-bg);
+  }
+
+  /* Page background */
+  .storefront-default > * {
+    background-color: var(--sd-bg);
+  }
+
+  /* Product card */
+  .storefront-default .rounded-xl.border.bg-card {
+    background-color: var(--sd-surface);
+    border-color: var(--sd-border);
+    border-radius: 12px;
+    box-shadow: var(--sd-card-shadow);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .storefront-default .rounded-xl.border.bg-card:hover {
+    box-shadow: var(--sd-card-shadow-hover);
+    transform: translateY(-2px);
+  }
+
+  /* Product image inner container */
+  .storefront-default .rounded-xl.border.bg-card .bg-white.rounded-lg {
+    background-color: #F4F4F5;
+    border-color: #E4E4E7;
+  }
+
+  /* Product title */
+  .storefront-default .rounded-xl.border.bg-card h3 {
+    color: var(--sd-text);
+  }
+
+  /* Price */
+  .storefront-default .text-primary {
+    color: var(--sd-primary) !important;
+  }
+
+  /* Muted text */
+  .storefront-default .text-muted-foreground {
+    color: var(--sd-muted) !important;
+  }
+
+  /* Foreground text */
+  .storefront-default .text-foreground {
+    color: var(--sd-text) !important;
+  }
+
+  /* Category headings */
+  .storefront-default h2.text-xl,
+  .storefront-default h2.text-2xl,
+  .storefront-default h1 {
+    color: var(--sd-heading);
+  }
+
+  /* Primary (add to cart) button */
+  .storefront-default button.bg-primary,
+  .storefront-default .bg-primary {
+    background-color: var(--sd-primary) !important;
+    color: var(--sd-primary-fg) !important;
+    border-radius: 8px !important;
+  }
+  .storefront-default button.bg-primary:hover {
+    background-color: var(--sd-primary-hover) !important;
+  }
+
+  /* Full-width CTA buttons inside cards */
+  .storefront-default .rounded-xl.border.bg-card button {
+    border-radius: 8px !important;
+  }
+
+  /* Outline / ghost buttons */
+  .storefront-default button.border:not(.bg-primary),
+  .storefront-default a.border:not(.bg-primary) {
+    border-color: var(--sd-border) !important;
+    color: var(--sd-text) !important;
+  }
+
+  /* Icon buttons (round social/cart buttons in header) */
+  .storefront-default button.rounded-full.border,
+  .storefront-default a.rounded-full.border {
+    border-color: var(--sd-border) !important;
+    color: var(--sd-muted) !important;
+    background-color: var(--sd-surface) !important;
+    transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .storefront-default button.rounded-full.border:hover,
+  .storefront-default a.rounded-full.border:hover {
+    border-color: #A1A1AA !important;
+    color: var(--sd-text) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  /* Search input */
+  .storefront-default input.rounded-xl.border,
+  .storefront-default input[type="text"] {
+    background-color: var(--sd-surface) !important;
+    border-color: var(--sd-border) !important;
+    color: var(--sd-text) !important;
+    border-radius: 10px !important;
+  }
+  .storefront-default input::placeholder {
+    color: var(--sd-muted) !important;
+  }
+
+  /* Cart / order dialog */
+  .storefront-default [role="dialog"] {
+    background-color: var(--sd-surface) !important;
+    border-color: var(--sd-border) !important;
+    color: var(--sd-text) !important;
+  }
+  .storefront-default [role="dialog"] h2,
+  .storefront-default [role="dialog"] h3 {
+    color: var(--sd-heading) !important;
+  }
+  .storefront-default [role="dialog"] p {
+    color: var(--sd-muted);
+  }
+  .storefront-default [role="dialog"] input,
+  .storefront-default [role="dialog"] select,
+  .storefront-default [role="dialog"] button[role="combobox"] {
+    background-color: var(--sd-bg) !important;
+    border-color: var(--sd-border) !important;
+    color: var(--sd-text) !important;
+    border-radius: 8px !important;
+  }
+  .storefront-default [role="dialog"] label {
+    color: var(--sd-text) !important;
+  }
+  .storefront-default [role="dialog"] button.bg-primary,
+  .storefront-default [role="dialog"] .bg-primary {
+    background-color: var(--sd-primary) !important;
+    color: var(--sd-primary-fg) !important;
+    border-radius: 8px !important;
+  }
+  .storefront-default [role="dialog"] .text-muted-foreground {
+    color: var(--sd-muted) !important;
+  }
+  .storefront-default [role="dialog"] .border-t,
+  .storefront-default [role="dialog"] .border-b {
+    border-color: var(--sd-border) !important;
+  }
+  .storefront-default [role="dialog"] .bg-muted {
+    background-color: #F4F4F5 !important;
+  }
+  .storefront-default [role="dialog"] .text-primary {
+    color: var(--sd-primary) !important;
+  }
+
+  /* Select dropdowns (portal) */
+  .storefront-default [role="listbox"] {
+    background-color: var(--sd-surface) !important;
+    border-color: var(--sd-border) !important;
+    color: var(--sd-text) !important;
+  }
+  .storefront-default [role="listbox"] [role="option"] {
+    color: var(--sd-text) !important;
+  }
+  .storefront-default [role="listbox"] [role="option"][data-highlighted] {
+    background-color: #EFF6FF !important;
+    color: var(--sd-primary) !important;
+  }
+
+  /* bg-card usage (ContactSidebar etc.) */
+  .storefront-default .bg-card {
+    background-color: var(--sd-surface) !important;
+    border-color: var(--sd-border) !important;
+  }
+
+  /* bg-muted (filter badge, status bar) */
+  .storefront-default .bg-muted,
+  .storefront-default .bg-muted\/50 {
+    background-color: #F4F4F5 !important;
+  }
+
+  /* Footer */
+  .storefront-default footer {
+    background-color: var(--sd-bg) !important;
+  }
+
+  /* Border separator */
+  .storefront-default .border-t,
+  .storefront-default .border-b,
+  .storefront-default .border-border {
+    border-color: var(--sd-border) !important;
+  }
+
   .glass-header {
     background: rgba(255, 255, 255, 0.78);
     -webkit-backdrop-filter: saturate(180%) blur(16px);
