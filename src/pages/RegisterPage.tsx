@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Loader, Gift, CircleAlert as AlertCircle, MessageCircle } from 'lucide-react';
+import { Loader, CircleAlert as AlertCircle, MessageCircle } from 'lucide-react';
 import { useSubscriptionModal } from '@/contexts/SubscriptionModalContext';
 
 import { Button } from '@/components/ui/button';
@@ -168,21 +168,8 @@ export default function RegisterPage() {
           <CardHeader className="space-y-2 px-7 pt-7">
             <CardTitle className="text-2xl text-center page-title">Criar Conta</CardTitle>
             <CardDescription className="text-center text-[14px]">
-              {referralCode 
-                ? 'Você foi indicado! Cadastre-se e ganhe acesso à plataforma' 
-                : 'Cadastre-se para criar sua vitrine digital de produtos'
-              }
+              Cadastre-se para criar sua vitrine digital de produtos
             </CardDescription>
-            {referralCode && (
-              <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-4">
-                <div className="flex items-center gap-2 text-green-800 dark:text-green-200">
-                  <Gift className="h-4 w-4" />
-                  <span className="text-sm font-medium">
-                    Você está sendo indicado por um usuário da plataforma!
-                  </span>
-                </div>
-              </div>
-            )}
           </CardHeader>
           <CardContent className="px-7">
             {registerError && (
