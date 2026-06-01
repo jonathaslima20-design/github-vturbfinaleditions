@@ -403,9 +403,9 @@ body {
     --sd-heading: #09090B;
     --sd-muted: #71717A;
     --sd-border: #E4E4E7;
-    --sd-primary: #2563EB;
+    --sd-primary: #0A0A0A;
     --sd-primary-fg: #FFFFFF;
-    --sd-primary-hover: #1D4ED8;
+    --sd-primary-hover: #27272A;
     --sd-card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
     --sd-card-shadow-hover: 0 4px 16px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
     background-color: var(--sd-bg);
@@ -566,8 +566,8 @@ body {
     color: var(--sd-text) !important;
   }
   .storefront-default [role="listbox"] [role="option"][data-highlighted] {
-    background-color: #EFF6FF !important;
-    color: var(--sd-primary) !important;
+    background-color: #F4F4F5 !important;
+    color: var(--sd-text) !important;
   }
 
   /* bg-card usage (ContactSidebar etc.) */
