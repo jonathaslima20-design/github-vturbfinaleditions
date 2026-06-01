@@ -203,6 +203,11 @@ export default function CartModal({
       const orderMessage = generateOrderMessage(customer);
       const whatsappUrl = generateWhatsAppUrl(corretor.whatsapp || '', orderMessage, countryCode);
 
+      // Open WhatsApp immediately while still in the synchronous user-gesture context.
+      // Mobile browsers (iOS Safari, Android Chrome) block window.open() if called
+      // after any await, because the user-gesture context is lost across async boundaries.
+      window.open(whatsappUrl, '_blank');
+
       const orderItems = [
         ...cart.distributions.map((dist) => ({
           product_id: dist.product.id,
@@ -257,8 +262,6 @@ export default function CartModal({
       }
 
       await trackWhatsAppClick('storefront', 'product', 'cart_checkout');
-
-      window.open(whatsappUrl, '_blank');
 
       clearCart();
       clearCoupon();
