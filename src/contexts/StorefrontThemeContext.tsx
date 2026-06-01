@@ -34,6 +34,8 @@ interface StorefrontThemeProviderProps {
 
 export function StorefrontThemeProvider({ userId, isPaidPlan, children }: StorefrontThemeProviderProps) {
   const { appearance, isCustomized } = useStorefrontAppearance(userId);
+
+  // Full theming (colors + fonts) requires a paid plan with an active customization record
   const isActive = isCustomized && isPaidPlan && appearance.is_active;
 
   useEffect(() => {
@@ -43,9 +45,26 @@ export function StorefrontThemeProvider({ userId, isPaidPlan, children }: Storef
     }
   }, [isActive, appearance.font_family, appearance.heading_font_family]);
 
-  const sfStyles = useMemo<React.CSSProperties | undefined>(() => {
-    if (!isActive) return undefined;
+  // Format variables (radius, shadow, spacing) always use the active appearance or defaults.
+  // Color/font variables are only included when full theming is active.
+  const sfStyles = useMemo<React.CSSProperties>(() => {
+    const src = isActive ? appearance : DEFAULT_APPEARANCE;
+
+    const formatVars = {
+      '--sf-radius-card': getRadiusPx(src.card_border_radius),
+      '--sf-radius-btn': getRadiusPx(src.button_border_radius),
+      '--sf-radius-img': getRadiusPx(src.image_border_radius),
+      '--sf-shadow': getShadowCss(src.card_shadow),
+      '--sf-gap': getSpacingValue(src.card_gap, 'gap'),
+      '--sf-spacing': getSpacingValue(src.section_spacing, 'section'),
+    };
+
+    if (!isActive) {
+      return formatVars as React.CSSProperties;
+    }
+
     return {
+      ...formatVars,
       '--sf-bg': appearance.bg_color,
       '--sf-text': appearance.text_color,
       '--sf-heading': appearance.heading_color,
@@ -59,12 +78,6 @@ export function StorefrontThemeProvider({ userId, isPaidPlan, children }: Storef
       '--sf-icon': appearance.icon_color,
       '--sf-muted': appearance.muted_text_color,
       '--sf-border': appearance.border_color,
-      '--sf-radius-card': getRadiusPx(appearance.card_border_radius),
-      '--sf-radius-btn': getRadiusPx(appearance.button_border_radius),
-      '--sf-radius-img': getRadiusPx(appearance.image_border_radius),
-      '--sf-shadow': getShadowCss(appearance.card_shadow),
-      '--sf-gap': getSpacingValue(appearance.card_gap, 'gap'),
-      '--sf-spacing': getSpacingValue(appearance.section_spacing, 'section'),
       '--sf-font': `'${appearance.font_family}', sans-serif`,
       '--sf-font-heading': `'${appearance.heading_font_family}', sans-serif`,
       '--sf-font-scale': getFontSizeScale(appearance.font_size_base),
@@ -75,18 +88,19 @@ export function StorefrontThemeProvider({ userId, isPaidPlan, children }: Storef
   }, [isActive, appearance]);
 
   useEffect(() => {
-    if (isActive && sfStyles) {
-      const root = document.documentElement;
-      root.classList.add('sf-themed');
-      const vars = sfStyles as Record<string, string>;
-      const appliedKeys: string[] = [];
-      for (const key of Object.keys(vars)) {
-        if (key.startsWith('--sf-')) {
-          root.style.setProperty(key, vars[key]);
-          appliedKeys.push(key);
-        }
-      }
+    const root = document.documentElement;
+    root.classList.add('sf-themed');
 
+    const vars = sfStyles as Record<string, string>;
+    const appliedKeys: string[] = [];
+    for (const key of Object.keys(vars)) {
+      if (key.startsWith('--sf-')) {
+        root.style.setProperty(key, vars[key]);
+        appliedKeys.push(key);
+      }
+    }
+
+    if (isActive) {
       root.setAttribute('data-footer-logo-mode', appearance.footer_logo_mode);
       root.setAttribute('data-footer-logo-format', appearance.footer_logo_format ?? 'rectangular');
       if (appearance.custom_logo_url) {
@@ -94,22 +108,22 @@ export function StorefrontThemeProvider({ userId, isPaidPlan, children }: Storef
       } else {
         root.removeAttribute('data-custom-logo-url');
       }
-
-      return () => {
-        root.classList.remove('sf-themed');
-        appliedKeys.forEach(k => root.style.removeProperty(k));
-        root.removeAttribute('data-footer-logo-mode');
-        root.removeAttribute('data-footer-logo-format');
-        root.removeAttribute('data-custom-logo-url');
-      };
     }
+
+    return () => {
+      root.classList.remove('sf-themed');
+      appliedKeys.forEach(k => root.style.removeProperty(k));
+      root.removeAttribute('data-footer-logo-mode');
+      root.removeAttribute('data-footer-logo-format');
+      root.removeAttribute('data-custom-logo-url');
+    };
   }, [isActive, sfStyles, appearance.footer_logo_mode, appearance.footer_logo_format, appearance.custom_logo_url]);
 
   const value = useMemo(() => ({ appearance, isActive, sfStyles }), [appearance, isActive, sfStyles]);
 
   return (
     <StorefrontThemeContext.Provider value={value}>
-      <div className={isActive ? 'sf-themed' : ''} style={sfStyles}>
+      <div className="sf-themed" style={sfStyles}>
         {children}
       </div>
     </StorefrontThemeContext.Provider>
