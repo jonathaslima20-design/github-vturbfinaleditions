@@ -423,9 +423,9 @@ export default function CorretorPage({ customDomainSlug }: CorretorPageProps = {
           <AlertCircle className="h-8 w-8 text-muted-foreground" />
         </div>
         <div className="text-center max-w-md">
-          <h1 className="text-2xl font-bold mb-2">Catálogo Indisponível</h1>
+          <h1 className="text-2xl font-bold mb-2">Este catálogo não está ativo</h1>
           <p className="text-muted-foreground">
-            Este catálogo está temporariamente indisponível. O responsável foi notificado.
+            O acesso a este catálogo está suspenso. Para compras ou dúvidas, fale diretamente com o vendedor.
           </p>
         </div>
         <Button variant="outline" asChild>
