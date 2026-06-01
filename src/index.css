@@ -320,6 +320,81 @@ body {
     border-color: var(--sf-card-border) !important;
   }
 
+  /* ─── Cookie consent banner (role=region, not dialog) ──────────────── */
+  .sf-themed [aria-label="Aviso de cookies"] > div {
+    background-color: var(--sf-card-bg) !important;
+    border-color: var(--sf-card-border) !important;
+    color: var(--sf-text) !important;
+    font-family: var(--sf-font);
+  }
+  .sf-themed [aria-label="Aviso de cookies"] p {
+    color: var(--sf-muted) !important;
+  }
+  .sf-themed [aria-label="Aviso de cookies"] .text-foreground,
+  .sf-themed [aria-label="Aviso de cookies"] .font-semibold {
+    color: var(--sf-text) !important;
+  }
+  .sf-themed [aria-label="Aviso de cookies"] a {
+    color: var(--sf-text) !important;
+  }
+  .sf-themed [aria-label="Aviso de cookies"] button.bg-primary {
+    background-color: var(--sf-button-bg) !important;
+    color: var(--sf-button-text) !important;
+    border-radius: var(--sf-radius-btn) !important;
+  }
+  .sf-themed [aria-label="Aviso de cookies"] button.border {
+    border-color: var(--sf-border) !important;
+    color: var(--sf-text) !important;
+    border-radius: var(--sf-radius-btn) !important;
+    background-color: transparent !important;
+  }
+  .sf-themed [aria-label="Aviso de cookies"] button.border:hover {
+    background-color: color-mix(in srgb, var(--sf-card-bg) 70%, var(--sf-border) 30%) !important;
+  }
+
+  /* ─── Cookie customize modal toggle switches ────────────────────────── */
+  .sf-themed [role="dialog"] button[role="switch"].bg-primary {
+    background-color: var(--sf-button-bg) !important;
+  }
+  .sf-themed [role="dialog"] button[role="switch"]:not(.bg-primary) {
+    background-color: color-mix(in srgb, var(--sf-border) 60%, var(--sf-card-bg) 40%) !important;
+  }
+  .sf-themed [role="dialog"] .bg-muted\/30 {
+    background-color: color-mix(in srgb, var(--sf-card-bg) 60%, var(--sf-border) 40%) !important;
+    border-color: var(--sf-border) !important;
+  }
+  .sf-themed [role="dialog"] span.bg-muted {
+    background-color: color-mix(in srgb, var(--sf-card-bg) 60%, var(--sf-border) 40%) !important;
+    color: var(--sf-muted) !important;
+  }
+
+  /* ─── Sonner toasts theming ─────────────────────────────────────────── */
+  .sf-themed [data-sonner-toaster] [data-sonner-toast] {
+    background-color: var(--sf-card-bg) !important;
+    border-color: var(--sf-card-border) !important;
+    color: var(--sf-text) !important;
+    font-family: var(--sf-font);
+  }
+  .sf-themed [data-sonner-toaster] [data-sonner-toast] [data-title] {
+    color: var(--sf-text) !important;
+  }
+  .sf-themed [data-sonner-toaster] [data-sonner-toast] [data-description] {
+    color: var(--sf-muted) !important;
+  }
+  .sf-themed [data-sonner-toaster] [data-sonner-toast] [data-close-button] {
+    background-color: var(--sf-card-bg) !important;
+    border-color: var(--sf-border) !important;
+    color: var(--sf-muted) !important;
+  }
+  .sf-themed [data-sonner-toaster] [data-sonner-toast][data-type="success"] [data-icon] {
+    color: var(--sf-button-bg) !important;
+  }
+  .sf-themed [data-sonner-toaster] [data-sonner-toast] button[data-button] {
+    background-color: var(--sf-button-bg) !important;
+    color: var(--sf-button-text) !important;
+    border-radius: var(--sf-radius-btn) !important;
+  }
+
   .glass-header {
     background: rgba(255, 255, 255, 0.78);
     -webkit-backdrop-filter: saturate(180%) blur(16px);
